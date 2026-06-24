@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from sac_agent.tools.repo import git_status, list_files, read_file
+from sac_agent.tools.shell import run_shell_command
 
 
 @dataclass(frozen=True)
@@ -40,4 +41,5 @@ def default_tool_registry() -> ToolRegistry:
     registry.register("git_status", "Inspect short git status for the repository.", git_status)
     registry.register("list_files", "List repository files as relative paths.", list_files)
     registry.register("read_file", "Read a UTF-8 text file with optional line range.", read_file)
+    registry.register("run_shell_command", "Run a classified shell command in the repository.", run_shell_command)
     return registry
