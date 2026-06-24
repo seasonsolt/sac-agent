@@ -100,11 +100,14 @@ The current deterministic flow is:
 ```text
 User input
   -> Textual TUI
-  -> AgentSession.record_user_message()
   -> DeepAgentRunner.run_turn()
+  -> AgentSession.record_user_message()
   -> AgentSession.record_event()
   -> Textual chat and activity logs
 ```
+
+The TUI calls `DeepAgentRunner.run_turn()`. The runner owns the current turn
+mutation and records the user message inside that method.
 
 A future model-backed flow should preserve the same safety boundaries:
 

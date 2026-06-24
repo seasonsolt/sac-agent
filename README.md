@@ -103,10 +103,13 @@ would need:
   absolute-path, and symlink escapes.
 - The command classifier marks known read-only commands as safe and treats
   mutating, networked, empty, or unknown commands as risky.
-- The shell tool blocks risky commands unless the caller passes an explicit
-  approval result.
-- Patch proposals can summarize changed files, but writes happen only through
-  `git apply --whitespace=fix` after approval.
+- The shell tool blocks risky commands unless the caller explicitly opts in
+  with `allow_risky=True`. Connecting that opt-in to `ApprovalGate` and the TUI
+  is future integration work.
+- Patch proposals can summarize changed files. The intended controller/TUI flow
+  should call `apply_patch()` only after approval; `apply_patch()` is the narrow
+  `git apply --whitespace=fix` write primitive, not an approval-enforcing
+  primitive.
 - The approval gate keeps pending requests and human decisions separate from
   tool code.
 
