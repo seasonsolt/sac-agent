@@ -56,12 +56,16 @@ def _parse_unquoted_diff_git_target(operands: str) -> str | None:
             candidates.append((source, target))
         start = index + 1
 
+    # Unquoted headers are ambiguous; prefer stable summaries until diff body parsing exists.
     for source, target in candidates:
         if source.removeprefix("a/") == target.removeprefix("b/"):
             return target
+    for source, target in candidates:
+        source_path = source.removeprefix("a/")
+        if " b/" not in source_path and Path(source_path).suffix:
+            return target
     if candidates:
-        # Ambiguous unquoted headers can contain " b/" inside the target path.
-        return candidates[0][1]
+        return candidates[-1][1]
     return None
 
 
