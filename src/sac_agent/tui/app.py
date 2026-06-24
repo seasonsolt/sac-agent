@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from rich.markup import escape
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, Header, Input, RichLog, Static
@@ -20,9 +21,6 @@ class SacTuiApp(App[None]):
     #activity {
         width: 1fr;
         border: solid $panel;
-    }
-    #command {
-        dock: bottom;
     }
     """
 
@@ -50,9 +48,9 @@ class SacTuiApp(App[None]):
             return
         chat_log = self.query_one("#chat-log", RichLog)
         activity_log = self.query_one("#activity-log", RichLog)
-        chat_log.write(f"[bold]You:[/bold] {command}")
+        chat_log.write(f"[bold]You:[/bold] {escape(command)}")
         response = self.runner.run_turn(self.session, command)
-        chat_log.write(f"[bold green]SAC:[/bold green] {response}")
+        chat_log.write(f"[bold green]SAC:[/bold green] {escape(response)}")
         for runtime_event in self.session.events[-3:]:
-            activity_log.write(f"{runtime_event.kind}: {runtime_event.message}")
+            activity_log.write(f"{escape(str(runtime_event.kind))}: {escape(runtime_event.message)}")
         event.input.value = ""

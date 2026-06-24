@@ -19,8 +19,17 @@ def run(
     """Start the SAC Agent TUI."""
     if ctx.invoked_subcommand is not None:
         return
-    SacTuiApp(repo_path=repo.resolve()).run()
+    SacTuiApp(repo_path=_resolve_repo_path(repo)).run()
 
 
 def main() -> None:
     app()
+
+
+def _resolve_repo_path(repo: Path) -> Path:
+    resolved = repo.expanduser().resolve()
+    if not resolved.exists():
+        raise typer.BadParameter(f"Repository path does not exist: {resolved}")
+    if not resolved.is_dir():
+        raise typer.BadParameter(f"Repository path is not a directory: {resolved}")
+    return resolved
