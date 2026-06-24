@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sac-agent"
+version = "0.1.0"
+description = "A teaching-oriented terminal Software Engineer Agent built with Textual, LangChain, and DeepAgent."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Seasonsolt" }]
+dependencies = [
+  "deepagents>=0.6.0",
+  "langchain>=1.0.0",
+  "langchain-core>=1.0.0",
+  "pydantic>=2.10.0",
+  "rich>=13.9.0",
+  "textual>=6.0.0",
+  "typer>=0.15.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+  "ruff>=0.8.0",
+]
+
+[project.scripts]
+sac = "sac_agent.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
