@@ -6,7 +6,8 @@ from sac_agent.tools.registry import ToolRegistry, default_tool_registry
 
 class DeepAgentRunner:
     # This class is the seam between the deterministic app runtime and the model-backed
-    # DeepAgent runtime. Tests use the deterministic branch so CI never needs an API key.
+    # DeepAgent runtime. This deterministic skeleton keeps CI independent of API keys
+    # until the model-backed path is added.
     def __init__(self, tools: ToolRegistry | None = None) -> None:
         self.tools = tools or default_tool_registry()
         self.system_prompt = SYSTEM_PROMPT
