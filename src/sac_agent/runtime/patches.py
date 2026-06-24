@@ -60,7 +60,8 @@ def _parse_unquoted_diff_git_target(operands: str) -> str | None:
         if source.removeprefix("a/") == target.removeprefix("b/"):
             return target
     if candidates:
-        return candidates[-1][1]
+        # Ambiguous unquoted headers can contain " b/" inside the target path.
+        return candidates[0][1]
     return None
 
 

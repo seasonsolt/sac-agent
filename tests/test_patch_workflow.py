@@ -44,6 +44,12 @@ def test_patch_proposal_parses_separator_like_path_text():
     assert patch.changed_files() == ["src/a b/name.py"]
 
 
+def test_patch_proposal_parses_separator_like_renamed_target():
+    patch = PatchProposal(summary="Rename", diff="diff --git a/old.py b/src/a b/name.py\n")
+
+    assert patch.changed_files() == ["src/a b/name.py"]
+
+
 def test_patch_proposal_parses_quoted_path_operands():
     patch = PatchProposal(
         summary="Change quoted path",
