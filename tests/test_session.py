@@ -11,10 +11,14 @@ def test_session_records_user_message_and_event(tmp_path: Path):
     session.record_event(EventKind.AGENT_THOUGHT, "Planning repository inspection")
 
     assert session.repo_path == tmp_path
+    assert len(session.messages) == 1
     assert session.messages[-1].role == "user"
     assert session.messages[-1].content == "Fix the failing test"
-    assert session.events[-1].kind == EventKind.AGENT_THOUGHT
-    assert session.events[-1].message == "Planning repository inspection"
+    assert len(session.events) == 2
+    assert session.events[0].kind == EventKind.USER_MESSAGE
+    assert session.events[0].message == "Fix the failing test"
+    assert session.events[1].kind == EventKind.AGENT_THOUGHT
+    assert session.events[1].message == "Planning repository inspection"
 
 
 def test_session_rejects_missing_repo_path(tmp_path: Path):
