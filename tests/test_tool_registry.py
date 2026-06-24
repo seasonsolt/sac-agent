@@ -15,3 +15,4 @@ def test_default_registry_contains_repo_tools():
     assert "git_status" in registry.names()
     assert "list_files" in registry.names()
     assert "read_file" in registry.names()
+    assert "run_shell_command" in registry.names()

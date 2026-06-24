@@ -23,14 +23,32 @@ def run_shell_command(repo_path: Path, argv: list[str], allow_risky: bool = Fals
     if classification.risk == CommandRisk.RISKY and not allow_risky:
         raise ShellCommandBlocked(f"Command requires approval: {' '.join(argv)}")
 
-    result = subprocess.run(
-        argv,
-        cwd=repo_path,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
+    try:
+        result = subprocess.run(
+            argv,
+            cwd=repo_path,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired as error:
+        return ShellCommandResult(
+            argv=argv,
+            classification=classification,
+            return_code=124,
+            stdout=error.output or "",
+            stderr=f"Command timed out after {error.timeout} seconds: {' '.join(argv)}",
+        )
+    except OSError as error:
+        return ShellCommandResult(
+            argv=argv,
+            classification=classification,
+            return_code=1,
+            stdout="",
+            stderr=str(error),
+        )
+
     return ShellCommandResult(
         argv=argv,
         classification=classification,
