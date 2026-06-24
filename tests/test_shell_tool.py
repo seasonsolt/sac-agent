@@ -47,7 +47,12 @@ def test_invalid_cwd_returns_structured_failure(tmp_path: Path):
 
 def test_timeout_returns_structured_failure(tmp_path: Path, monkeypatch):
     def raise_timeout(*args, **kwargs):
-        raise subprocess.TimeoutExpired(cmd=["ls"], timeout=120, output="partial output", stderr="partial error")
+        raise subprocess.TimeoutExpired(
+            cmd=["ls"],
+            timeout=120,
+            output=b"partial \xff output",
+            stderr=b"partial \xff error",
+        )
 
     monkeypatch.setattr(sac_agent.tools.shell.subprocess, "run", raise_timeout)
 
@@ -55,7 +60,8 @@ def test_timeout_returns_structured_failure(tmp_path: Path, monkeypatch):
 
     assert result.classification.risk == CommandRisk.SAFE
     assert result.return_code == 124
-    assert result.stdout == "partial output"
+    assert result.stdout == "partial \ufffd output"
+    assert isinstance(result.stderr, str)
     assert "timed out" in result.stderr
 
 
