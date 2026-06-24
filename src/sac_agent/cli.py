@@ -2,6 +2,8 @@ from pathlib import Path
 
 import typer
 
+from sac_agent.tui.app import SacTuiApp
+
 app = typer.Typer(
     name="sac",
     help="Start the SAC Agent TUI for an interactive coding session.",
@@ -17,7 +19,7 @@ def run(
     """Start the SAC Agent TUI."""
     if ctx.invoked_subcommand is not None:
         return
-    typer.echo(f"SAC Agent will open: {repo.resolve()}")
+    SacTuiApp(repo_path=repo.resolve()).run()
 
 
 def main() -> None:
