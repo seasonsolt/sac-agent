@@ -39,11 +39,21 @@ Risky commands include known mutating or networked tools:
 Empty commands and unknown commands are risky. This conservative default keeps
 new tool names from becoming executable by accident.
 
+The classifier also treats obvious path escapes as risky for otherwise allowed
+commands. Absolute paths, parent-directory traversal, and `git diff --no-index`
+need approval because they can read outside the selected repository. Flags that
+make allowed commands follow symlinks, such as `rg --follow` and `ls -L`, are
+risky for the same reason.
+
 ## Shell Guard
 
 `src/sac_agent/tools/shell.py` calls the classifier before `subprocess.run()`.
 If the command is risky and `allow_risky` is false, the shell tool raises
 `ShellCommandBlocked` and does not start a subprocess.
+
+For commands that remain allowed, the shell guard checks path-like arguments
+against the selected repository root. This catches existing symlinks that point
+outside the repository before the subprocess starts.
 
 When a command runs, the shell tool returns a structured result with:
 

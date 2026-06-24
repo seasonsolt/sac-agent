@@ -28,12 +28,49 @@ def _text_output(value: str | bytes | None) -> str:
     return value.decode("utf-8", errors="replace")
 
 
+def _candidate_path_arguments(argv: list[str]) -> list[str]:
+    if not argv:
+        return []
+    start_index = 2 if argv[0] == "git" and len(argv) > 1 else 1
+    candidates: list[str] = []
+    for argument in argv[start_index:]:
+        if argument == "--":
+            continue
+        _, separator, option_value = argument.partition("=")
+        value = option_value if separator else argument
+        if not value or value.startswith("-"):
+            continue
+        candidates.append(value)
+    return candidates
+
+
+def _looks_like_path_argument(repo_path: Path, value: str) -> bool:
+    path = Path(value).expanduser()
+    return path.is_absolute() or "/" in value or value in {".", ".."} or (repo_path / path).exists()
+
+
+def _first_repo_escape_argument(repo_path: Path, argv: list[str]) -> str | None:
+    repo = repo_path.resolve()
+    for value in _candidate_path_arguments(argv):
+        if not _looks_like_path_argument(repo, value):
+            continue
+        path = Path(value).expanduser()
+        selected = path if path.is_absolute() else repo / path
+        resolved = selected.resolve()
+        if resolved != repo and repo not in resolved.parents:
+            return value
+    return None
+
+
 def run_shell_command(repo_path: Path, argv: list[str], allow_risky: bool = False) -> ShellCommandResult:
     # Classify before spawning a subprocess. This prevents a risky command from
     # running while the UI is still waiting for human approval.
     classification = classify_command(argv)
-    if classification.risk == CommandRisk.RISKY and not allow_risky:
-        raise ShellCommandBlocked(f"Command requires approval: {' '.join(argv)}")
+    if not allow_risky:
+        if classification.risk == CommandRisk.RISKY:
+            raise ShellCommandBlocked(f"Command requires approval: {' '.join(argv)}")
+        if escaping_argument := _first_repo_escape_argument(repo_path, argv):
+            raise ShellCommandBlocked(f"Command argument escapes repository: {escaping_argument}")
 
     try:
         result = subprocess.run(

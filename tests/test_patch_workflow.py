@@ -144,3 +144,49 @@ def test_apply_patch_returns_nonzero_for_invalid_repo_path(tmp_path: Path):
     assert result.return_code != 0
     assert result.stdout == ""
     assert result.stderr
+
+
+def test_apply_patch_rejects_parent_directory_escape(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("secret\n", encoding="utf-8")
+    patch = PatchProposal(
+        summary="Try to change outside file",
+        diff=(
+            "diff --git a/../outside.txt b/../outside.txt\n"
+            "--- a/../outside.txt\n"
+            "+++ b/../outside.txt\n"
+            "@@ -1 +1 @@\n"
+            "-secret\n"
+            "+changed\n"
+        ),
+    )
+
+    result = apply_patch(repo, patch)
+
+    assert result.return_code != 0
+    assert outside.read_text(encoding="utf-8") == "secret\n"
+
+
+def test_apply_patch_rejects_absolute_path_escape(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("secret\n", encoding="utf-8")
+    patch = PatchProposal(
+        summary="Try to change absolute file",
+        diff=(
+            "diff --git a/outside.txt b/outside.txt\n"
+            f"--- {outside}\n"
+            f"+++ {outside}\n"
+            "@@ -1 +1 @@\n"
+            "-secret\n"
+            "+changed\n"
+        ),
+    )
+
+    result = apply_patch(repo, patch)
+
+    assert result.return_code != 0
+    assert outside.read_text(encoding="utf-8") == "secret\n"

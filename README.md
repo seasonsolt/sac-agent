@@ -117,7 +117,9 @@ would need:
   repository and environment.
 - The shell tool blocks risky commands unless the caller explicitly opts in
   with `allow_risky=True`. Connecting that opt-in to `ApprovalGate` and the TUI
-  is future integration work.
+  is future integration work. For allowed commands, the shell guard also rejects
+  path-like arguments that would resolve outside the selected repository, and
+  the classifier treats symlink-following flags as risky.
 - Patch proposals can summarize changed files. The intended controller/TUI flow
   should call `apply_patch()` only after approval; `apply_patch()` is the narrow
   `git apply --whitespace=fix` write primitive, not an approval-enforcing

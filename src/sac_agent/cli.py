@@ -11,14 +11,11 @@ app = typer.Typer(
 REPO_ARGUMENT = typer.Argument(Path.cwd(), help="Repository path to open.")
 
 
-@app.callback(invoke_without_command=True)
+@app.command()
 def run(
-    ctx: typer.Context,
     repo: Path = REPO_ARGUMENT,
 ) -> None:
-    """Start the SAC Agent TUI."""
-    if ctx.invoked_subcommand is not None:
-        return
+    """Start the SAC Agent TUI for an interactive coding session."""
     SacTuiApp(repo_path=_resolve_repo_path(repo)).run()
 
 

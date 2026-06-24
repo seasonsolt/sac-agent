@@ -1,6 +1,8 @@
 import subprocess
 from pathlib import Path
 
+import pytest
+
 import sac_agent.tools.shell
 from sac_agent.runtime.commands import CommandRisk
 from sac_agent.tools.shell import ShellCommandBlocked, run_shell_command
@@ -43,6 +45,69 @@ def test_invalid_cwd_returns_structured_failure(tmp_path: Path):
     assert result.return_code == 1
     assert result.stdout == ""
     assert result.stderr
+
+
+def test_blocks_allowed_command_with_absolute_outside_path(tmp_path: Path, monkeypatch):
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("subprocess.run should not be called")
+
+    monkeypatch.setattr(sac_agent.tools.shell.subprocess, "run", fail_if_called)
+
+    with pytest.raises(ShellCommandBlocked):
+        run_shell_command(tmp_path, ["rg", "SECRET", "/tmp/outside-secret.txt"], allow_risky=False)
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["ls", ".."],
+        ["pytest", "/tmp/outside-tests"],
+        ["git", "diff", "--no-index", "/tmp/outside-secret.txt", "local.txt"],
+    ],
+)
+def test_blocks_path_escape_syntax_without_spawning(tmp_path: Path, monkeypatch, argv: list[str]):
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("subprocess.run should not be called")
+
+    monkeypatch.setattr(sac_agent.tools.shell.subprocess, "run", fail_if_called)
+
+    with pytest.raises(ShellCommandBlocked):
+        run_shell_command(tmp_path, argv, allow_risky=False)
+
+
+def test_blocks_allowed_command_with_symlink_escape(tmp_path: Path, monkeypatch):
+    outside = tmp_path / "outside"
+    repo = tmp_path / "repo"
+    outside.mkdir()
+    repo.mkdir()
+    outside_file = outside / "secret.txt"
+    outside_file.write_text("SECRET", encoding="utf-8")
+    (repo / "outside-link.txt").symlink_to(outside_file)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("subprocess.run should not be called")
+
+    monkeypatch.setattr(sac_agent.tools.shell.subprocess, "run", fail_if_called)
+
+    with pytest.raises(ShellCommandBlocked):
+        run_shell_command(repo, ["ls", "outside-link.txt"], allow_risky=False)
+
+
+def test_blocks_recursive_symlink_following_command(tmp_path: Path, monkeypatch):
+    outside = tmp_path / "outside"
+    repo = tmp_path / "repo"
+    outside.mkdir()
+    repo.mkdir()
+    (outside / "secret.txt").write_text("SECRET", encoding="utf-8")
+    (repo / "outside-dir").symlink_to(outside, target_is_directory=True)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("subprocess.run should not be called")
+
+    monkeypatch.setattr(sac_agent.tools.shell.subprocess, "run", fail_if_called)
+
+    with pytest.raises(ShellCommandBlocked):
+        run_shell_command(repo, ["rg", "--follow", "SECRET", "."], allow_risky=False)
 
 
 def test_timeout_returns_structured_failure(tmp_path: Path, monkeypatch):
