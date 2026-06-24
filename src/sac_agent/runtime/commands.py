@@ -29,7 +29,6 @@ RISKY_EXECUTABLES = {
 }
 
 SAFE_EXECUTABLES = {
-    "git",
     "ls",
     "pytest",
     "rg",
