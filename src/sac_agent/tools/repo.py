@@ -20,6 +20,8 @@ class CommandOutput(BaseModel):
 
 
 def _inside_repo(repo_path: Path, relative_path: str) -> Path:
+    # Resolve both paths before comparing them. This catches absolute paths,
+    # parent-directory traversal, and symlinks that point outside the repository.
     repo = repo_path.resolve()
     selected = (repo / relative_path).resolve()
     if repo not in selected.parents and selected != repo:
@@ -28,6 +30,8 @@ def _inside_repo(repo_path: Path, relative_path: str) -> Path:
 
 
 def list_files(repo_path: Path) -> FileList:
+    # Return relative paths so the model and TUI do not need to know the user's
+    # absolute filesystem layout.
     files = [
         str(path.relative_to(repo_path))
         for path in repo_path.rglob("*")
@@ -42,6 +46,8 @@ def read_file(
     start_line: int = 1,
     end_line: int | None = None,
 ) -> FileRead:
+    # Read-only tools still need path guards. A model should not be able to learn
+    # files outside the selected repo by passing "../" or a symlink path.
     selected = _inside_repo(repo_path, relative_path)
     lines = selected.read_text(encoding="utf-8").splitlines()
     start_index = max(start_line - 1, 0)
@@ -50,6 +56,8 @@ def read_file(
 
 
 def git_status(repo_path: Path) -> CommandOutput:
+    # This is intentionally a narrow git wrapper. More git commands should go
+    # through the command classifier until they have explicit tests and docs.
     result = subprocess.run(
         ["git", "status", "--short"],
         cwd=repo_path,

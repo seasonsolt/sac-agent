@@ -27,6 +27,8 @@ class SacTuiApp(App[None]):
     def __init__(self, repo_path: Path) -> None:
         super().__init__()
         self.repo_path = repo_path
+        # The TUI owns one session for the whole app run. That keeps chat history,
+        # activity events, and future approval state attached to the opened repo.
         self.session = AgentSession.start(repo_path)
         self.runner = DeepAgentRunner()
 
@@ -49,8 +51,12 @@ class SacTuiApp(App[None]):
         chat_log = self.query_one("#chat-log", RichLog)
         activity_log = self.query_one("#activity-log", RichLog)
         chat_log.write(f"[bold]You:[/bold] {escape(command)}")
+        # All agent work goes through the runner. The TUI renders results and will
+        # later collect approvals, but it should not bypass runtime safety code.
         response = self.runner.run_turn(self.session, command)
         chat_log.write(f"[bold green]SAC:[/bold green] {escape(response)}")
+        # Show the latest events as an audit trail for learners. A fuller TUI can
+        # replace this with filters or detail panes without changing session state.
         for runtime_event in self.session.events[-3:]:
             activity_log.write(f"{escape(str(runtime_event.kind))}: {escape(runtime_event.message)}")
         event.input.value = ""

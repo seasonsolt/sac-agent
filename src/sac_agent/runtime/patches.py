@@ -10,6 +10,9 @@ class PatchProposal(BaseModel):
     diff: str
 
     def changed_files(self) -> list[str]:
+        # This list is for review UI and teaching output. It is not a permission
+        # check; git apply is still the operation that decides whether a patch is
+        # valid and what it changes.
         files: list[str] = []
         for line in self.diff.splitlines():
             target = _parse_diff_git_target(line)
@@ -21,6 +24,9 @@ class PatchProposal(BaseModel):
 
 
 def _parse_diff_git_target(line: str) -> str | None:
+    # Git diff headers look simple until paths contain spaces or the text " b/".
+    # Prefer shlex for quoted headers, then fall back to a small parser for the
+    # unquoted cases covered by tests.
     prefix = "diff --git "
     if not line.startswith(prefix):
         return None
@@ -82,8 +88,8 @@ class PatchApplyResult(BaseModel):
 
 
 def apply_patch(repo_path: Path, proposal: PatchProposal) -> PatchApplyResult:
-    # Patch application is a separate function so the approval gate can call exactly
-    # one write primitive after the user accepts the diff shown in the TUI.
+    # Patch application is the narrow write primitive for repository edits. The
+    # future TUI should call this only after the user approves the exact diff.
     try:
         result = subprocess.run(
             ["git", "apply", "--whitespace=fix", "-"],

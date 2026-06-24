@@ -14,12 +14,15 @@ class RegisteredTool:
 
 
 class ToolRegistry:
-    # The registry gives the agent one controlled list of capabilities. New tools
-    # become visible through this class, which keeps permission review in one place.
+    # The registry gives the agent one controlled list of capabilities. Future
+    # DeepAgent adapters should expose tools from here instead of importing helper
+    # functions directly, which keeps permission review in one place.
     def __init__(self) -> None:
         self._tools: dict[str, RegisteredTool] = {}
 
     def register(self, name: str, description: str, function: Callable[..., Any]) -> None:
+        # Descriptions matter because model-backed runners will use them to decide
+        # when a tool is appropriate. Keep them factual and permission-aware.
         self._tools[name] = RegisteredTool(
             name=name,
             description=description,
@@ -37,6 +40,8 @@ class ToolRegistry:
 
 
 def default_tool_registry() -> ToolRegistry:
+    # The default set is small on purpose: broad read tools, plus a shell tool that
+    # performs its own risk check. Add write tools only with approval coverage.
     registry = ToolRegistry()
     registry.register("git_status", "Inspect short git status for the repository.", git_status)
     registry.register("list_files", "List repository files as relative paths.", list_files)

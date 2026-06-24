@@ -36,10 +36,14 @@ SAFE_EXECUTABLES = {
 
 
 def classify_command(argv: list[str]) -> CommandClassification:
+    # The classifier is intentionally conservative. A command should become safe
+    # only after someone has checked the executable and the supported arguments.
     if not argv:
         return CommandClassification(argv=argv, risk=CommandRisk.RISKY, reason="empty command")
 
     executable = argv[0]
+    # Only read-only git subcommands are safe. Mutating git commands such as
+    # commit, checkout, reset, and apply still require approval.
     if executable == "git" and len(argv) >= 2 and argv[1] in {"status", "diff", "log", "show"}:
         return CommandClassification(argv=argv, risk=CommandRisk.SAFE, reason="read-only git command")
     if executable in {"pytest", "rg", "ls"}:
@@ -52,4 +56,6 @@ def classify_command(argv: list[str]) -> CommandClassification:
         )
     if executable in SAFE_EXECUTABLES:
         return CommandClassification(argv=argv, risk=CommandRisk.SAFE, reason="known safe command")
+    # Unknown commands default to risky so installing a new tool cannot expand the
+    # agent's permissions by accident.
     return CommandClassification(argv=argv, risk=CommandRisk.RISKY, reason="unknown command")
