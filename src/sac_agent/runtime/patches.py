@@ -4,8 +4,6 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-COMPLETE_EXTENSIONLESS_FILENAMES = {"Dockerfile", "Makefile", "README"}
-
 
 class PatchProposal(BaseModel):
     summary: str
@@ -63,19 +61,18 @@ def _parse_unquoted_diff_git_target(operands: str) -> str | None:
     for source, target in candidates:
         if source.removeprefix("a/") == target.removeprefix("b/"):
             return target
-    for source, target in candidates:
-        if _looks_like_complete_source_path(source.removeprefix("a/")):
+    for _, target in candidates:
+        target_path = target.removeprefix("b/")
+        target_fragment, separator, _ = target_path.partition(" b/")
+        if separator and not _looks_like_complete_path_fragment(target_fragment):
             return target
     if candidates:
         return candidates[-1][1]
     return None
 
 
-def _looks_like_complete_source_path(source_path: str) -> bool:
-    if " b/" in source_path:
-        return False
-    path = Path(source_path)
-    return bool(path.suffix) or path.name in COMPLETE_EXTENSIONLESS_FILENAMES
+def _looks_like_complete_path_fragment(fragment: str) -> bool:
+    return bool(Path(fragment).suffix) or "/" not in fragment
 
 
 class PatchApplyResult(BaseModel):

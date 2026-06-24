@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from sac_agent.runtime.patches import PatchProposal, apply_patch
 
 
@@ -52,6 +54,13 @@ def test_patch_proposal_parses_separator_like_renamed_target():
 
 def test_patch_proposal_parses_separator_like_target_with_extensionless_source():
     patch = PatchProposal(summary="Rename", diff="diff --git a/README b/src/a b/name.py\n")
+
+    assert patch.changed_files() == ["src/a b/name.py"]
+
+
+@pytest.mark.parametrize("source_name", ["LICENSE", "CHANGELOG", ".gitignore"])
+def test_patch_proposal_parses_separator_like_target_with_common_source_names(source_name: str):
+    patch = PatchProposal(summary="Rename", diff=f"diff --git a/{source_name} b/src/a b/name.py\n")
 
     assert patch.changed_files() == ["src/a b/name.py"]
 
