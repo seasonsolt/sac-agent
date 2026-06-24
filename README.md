@@ -1,9 +1,10 @@
 # SAC Agent
 
 SAC Agent is a teaching-oriented personal Software Engineer Agent. It is a
-small Python project that shows how a coding agent can organize a session,
-inspect a repository, classify tools, ask for approval, and apply patches
-through a narrow write path.
+small Python project with primitives for repository inspection, command
+classification, approval requests, and patch application. The current TUI
+runner records a deterministic turn; it does not execute the full
+tool/approval loop yet.
 
 SAC Agent is not related to the open-source `swe-agent` project. The package
 name is `sac-agent`, and the installed terminal command is `sac`.
@@ -25,14 +26,23 @@ Model-backed execution is intentionally a later extension. The deterministic
 runner keeps tests and CI independent of API keys, network access, model
 availability, and prompt drift.
 
+## Current Limitations
+
+- No live model client runs during a TUI turn.
+- No tool loop calls repository or shell tools from the runner yet.
+- No TUI approval dialog is wired to `ApprovalGate` yet.
+- No model-generated patch flow exists yet.
+
 ## Installation From Source
+
+Requires Python 3.12+.
 
 Clone the repository and install it in editable mode:
 
 ```bash
 git clone https://github.com/seasonsolt/sac-agent.git
 cd sac-agent
-python -m venv .venv
+python3.12 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e ".[dev]"
 ```
@@ -101,8 +111,10 @@ would need:
   `git status`.
 - The repo path guard resolves selected paths and rejects parent-directory,
   absolute-path, and symlink escapes.
-- The command classifier marks known read-only commands as safe and treats
-  mutating, networked, empty, or unknown commands as risky.
+- The command classifier allows low-risk inspection commands plus the project
+  test runner, and treats mutating, networked, empty, or unknown commands as
+  risky. `pytest` can execute repository code, so run it only in a trusted
+  repository and environment.
 - The shell tool blocks risky commands unless the caller explicitly opts in
   with `allow_risky=True`. Connecting that opt-in to `ApprovalGate` and the TUI
   is future integration work.

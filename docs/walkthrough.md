@@ -5,10 +5,12 @@ future patch approval flow will connect.
 
 ## 1. Install The Project
 
+Requires Python 3.12+.
+
 From a local clone:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e ".[dev]"
 ```
@@ -77,12 +79,13 @@ This teaches an important agent rule: even read tools need path boundaries.
 When a future runner calls `run_shell_command(repo_path, argv)`, the shell tool:
 
 1. classifies the command
-2. blocks risky commands unless approval has already been granted
-3. runs approved or safe commands in the repository directory
+2. blocks risky commands unless the caller passes `allow_risky=True`
+3. runs allowed commands in the repository directory
 4. returns stdout, stderr, and return code as structured data
 
-For example, `rg AgentSession` is safe. `pip install requests` is risky because
-it can change the environment and use the network.
+For example, `rg AgentSession` is a low-risk allowed command. `pip install
+requests` is risky because it can change the environment and use the network.
+A future runner should pass `allow_risky=True` only after an approval decision.
 
 ## 8. Future Patch Approval Flow
 

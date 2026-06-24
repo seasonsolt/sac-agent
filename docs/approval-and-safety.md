@@ -8,7 +8,7 @@ but the safety model is the same one a model-backed coding agent needs.
 `src/sac_agent/runtime/commands.py` classifies commands before the shell tool
 runs them.
 
-Safe commands are known read-only or test commands:
+Allowed commands are low-risk inspection commands plus the project test runner:
 
 - `git status`
 - `git diff`
@@ -17,6 +17,10 @@ Safe commands are known read-only or test commands:
 - `ls`
 - `rg`
 - `pytest`
+
+`pytest` is not read-only. It executes repository code and may mutate files or
+use network access, depending on the tests. Run it only in a trusted repository
+and environment.
 
 Risky commands include known mutating or networked tools:
 
