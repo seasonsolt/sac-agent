@@ -4,6 +4,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+COMPLETE_EXTENSIONLESS_FILENAMES = {"Dockerfile", "Makefile", "README"}
+
 
 class PatchProposal(BaseModel):
     summary: str
@@ -56,17 +58,24 @@ def _parse_unquoted_diff_git_target(operands: str) -> str | None:
             candidates.append((source, target))
         start = index + 1
 
-    # Unquoted headers are ambiguous; prefer stable summaries until diff body parsing exists.
+    # Unquoted diff headers are ambiguous when paths contain " b/"; this only feeds
+    # approval summaries, while git apply remains authoritative for writes.
     for source, target in candidates:
         if source.removeprefix("a/") == target.removeprefix("b/"):
             return target
     for source, target in candidates:
-        source_path = source.removeprefix("a/")
-        if " b/" not in source_path and Path(source_path).suffix:
+        if _looks_like_complete_source_path(source.removeprefix("a/")):
             return target
     if candidates:
         return candidates[-1][1]
     return None
+
+
+def _looks_like_complete_source_path(source_path: str) -> bool:
+    if " b/" in source_path:
+        return False
+    path = Path(source_path)
+    return bool(path.suffix) or path.name in COMPLETE_EXTENSIONLESS_FILENAMES
 
 
 class PatchApplyResult(BaseModel):
